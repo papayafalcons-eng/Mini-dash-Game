@@ -1,1 +1,102 @@
 index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mini Dash Game</title>
+<style>
+  body { margin: 0; overflow: hidden; font-family: Arial; }
+  canvas { background: #111; display: block; }
+  #ui { position: absolute; top: 10px; left: 10px; color: white; }
+</style>
+</head>
+<body>
+<div id="ui">Level: <span id="level">1</span></div>
+<canvas id="game"></canvas>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let level = 1;
+let gravity = 0.8;
+let player = { x: 100, y: 300, size: 30, dy: 0, onGround: false };
+let obstacles = [];
+let speed = 5;
+
+function resetLevel() {
+  player.y = 300;
+  player.dy = 0;
+  obstacles = [];
+}
+
+function spawnObstacle() {
+  obstacles.push({ x: canvas.width, y: canvas.height - 50, w: 30, h: 50 });
+}
+
+setInterval(spawnObstacle, 1500);
+
+document.addEventListener('keydown', () => {
+  if (level === 1) {
+    if (player.onGround) player.dy = -15;
+  } else if (level === 2) {
+    player.dy = -12; // flying mode
+  } else if (level === 3) {
+    player.dy = -18; // harder gravity
+  }
+});
+
+function update() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // player physics
+  player.dy += gravity;
+  player.y += player.dy;
+
+  if (player.y > canvas.height - 50) {
+    player.y = canvas.height - 50;
+    player.dy = 0;
+    player.onGround = true;
+  } else {
+    player.onGround = false;
+  }
+
+  // draw player
+  ctx.fillStyle = 'cyan';
+  ctx.fillRect(player.x, player.y, player.size, player.size);
+
+  // obstacles
+  ctx.fillStyle = 'red';
+  obstacles.forEach((obs, i) => {
+    obs.x -= speed + level;
+    ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+
+    // collision
+    if (
+      player.x < obs.x + obs.w &&
+      player.x + player.size > obs.x &&
+      player.y < obs.y + obs.h &&
+      player.y + player.size > obs.y
+    ) {
+      resetLevel();
+    }
+
+    if (obs.x + obs.w < 0) obstacles.splice(i,1);
+  });
+
+  requestAnimationFrame(update);
+}
+
+// Level progression
+setInterval(() => {
+  level++;
+  if (level > 3) level = 1;
+  document.getElementById('level').textContent = level;
+  resetLevel();
+}, 15000);
+
+update();
+</script>
+</body>
+</html>
